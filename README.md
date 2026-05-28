@@ -8,9 +8,9 @@ Before games start, prices between books are similar since the market has enough
 
 Arbitrage in sports betting is when you take advantage of a price discrepancy between two books by betting both sides of an outcome at the same time, locking in a guaranteed profit. In practice, it looks like this. One book re-prices a line after a score update. Another book has not updated their line yet. For a brief window, the combined implied probability of both outcomes across the two books adds up to less than 100%.
 
-<img src="images/bet365_bet.png" width="520">
+<img src="images/bet365_bet.png" width="620">
 
-<img src="images/betway_bet.png" width="520">
+<img src="images/betway_bet.png" width="620">
 
 Both bets are on the same match and same line (20.5 total games). Bet365 has the Over at -120, Betway has the Under at +150.
 
