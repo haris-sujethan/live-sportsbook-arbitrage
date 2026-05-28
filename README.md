@@ -2,13 +2,11 @@
 
 ## Introduction
 
-Sportsbooks behave like financial markets, with lines and prices constantly changing based on betting behaviour. Unlike traditional markets, most sportsbooks set their prices independently, so discrepancies between books are bound to exist.
+Sportsbook lines and prices constantly change based on market behaviour. Unlike traditional finance, most sportsbooks set their prices independently, so discrepancies between books are bound to exist.
 
 Before games start, prices between books are similar since the market has enough time to settle around an expected value. However, during live (mid-match) betting, every sportsbook has to independently reprice its odds in real time. Some books react quickly to new information, while others are slower to adjust. These gaps create opportunities for arbitrage.
 
-Arbitrage in sports betting is when you take advantage of a price discrepancy between two books by betting both sides of an outcome at the same time, locking in a guaranteed profit. In practice, it looks like this. One book re-prices a live line after a score update. Another book has not updated their line yet. For a brief window, the combined implied probability of both outcomes across the two books adds up to less than 100%.
-
----
+Arbitrage in sports betting is when you take advantage of a price discrepancy between two books by betting both sides of an outcome at the same time, locking in a guaranteed profit. In practice, it looks like this. One book re-prices a line after a score update. Another book has not updated their line yet. For a brief window, the combined implied probability of both outcomes across the two books adds up to less than 100%.
 
 <img src="images/bet365_bet.png" width="520">
 
@@ -24,13 +22,11 @@ $50 on Over at bet365. $35 on Under at Betway. $85 total. The match went over. b
 
 A sportsbook normally prices both sides of a bet so that the implied probabilities add up to slightly over 100% that overage is their built-in margin (the vig). The vig is how books make money regardless of outcome. When you find two books where the combined probabilities add up to under 100%, the books have effectively handed their margin to you instead.
 
----
-
 This repository consists of two parts:
 
-**Part 1: Research:** Collected 6.5 million rows of historical odds data spanning 6 sports and 7 Ontario sportsbooks over a 3-month period. We ran a analysis to develop an optimal betting strategy (which sports, book pairs, pre vs live match, etc.)
+**Part 1: Research:** Collected 6.5 million rows of historical odds data spanning 6 sports and 7 Ontario sportsbooks over a 3-month period. Ran an analysis to develop an optimal betting strategy (which sports, book pairs, pre vs live match, etc.)
 
-**Part 2: Live Tool:** A real-time overlay that reads live odds directly from open browser tabs. The instant an arb window opens between two books, the tool shows you exactly how much and where to bet to guarantee a profit.
+**Part 2: Live Tool:** A real-time overlay that reads live odds directly from open browser tabs. The instant an arb window opens between two books, the tool shows you exactly how much and where to bet.
 
 ---
 
@@ -312,19 +308,7 @@ A lightweight http server runs on `localhost:8765`. The extension posts every pr
 
 A frameless, always-on-top window that sits on the screen.
 
-On startup, a setup dialog appears. Select which books you want to monitor and set your total stake:
-
-<img src="images/gui-selection.png" width="300">
-
-Four states:
-
-**WAITING**: No books detected yet.
-
-<img src="images/gui-waiting.png" width="300">
-
-**PARTIAL:** Some books detected, waiting for others.
-
-<img src="images/gui-partial.png" width="300">
+On startup, a setup dialog appears. Select which books you want to monitor and set your total stake.
 
 **SCANNING:** All books matched on the same fixture, no arb currently.
 
@@ -339,7 +323,6 @@ Four states:
 **Install Python dependencies:**
 
 ```bash
-cd arb-gui
 pip install -r requirements.txt
 ```
 
@@ -362,11 +345,17 @@ chmod +x launch_mac.sh
 ./launch_mac.sh
 ```
 
-A setup dialog will appear. Select which books you want to monitor (any 2 or more) and set your total stake. Hit Start Scanning.
-
 Open the matching event page for the same match on each selected book in Chrome. The overlay auto-detects each tab within 2 seconds and transitions through its states automatically. If any books are not attached to the GUI, hard refresh the particular book.
 
-### Supported Books
+---
+
+## Note
+
+**Account limitations.** A consistently profitable arb bettor will eventually be limited by sportsbooks. Once limited, meaning your maximum bet is reduced to something like $5, you can no longer place stakes large enough to make windows worthwhile. Getting limited is inevitable.
+
+**Bet sizing.** It's optimal to place bets in rounded amounts. Placing a bet for an exact calculated amount like $124.23 signals to a sportsbook's risk system that you are betting to a specific formula rather than recreationally. Books use stake precision as one of many signals to identify and flag sharp bettors. Rounding to the nearest dollar looks more natural. The tool rounds your stakes automatically.
+
+**Supported Books:**
 
 | Book       | How it reads                                                |
 | ---------- | ----------------------------------------------------------- |
@@ -377,11 +366,3 @@ Open the matching event page for the same match on each selected book in Chrome.
 | Betway     | DOM monitor: leaf node scan for names and prices separately |
 | FanDuel    | DOM monitor: reads `aria-label` attributes                  |
 | bet365     | DOM monitor: reads `gl-Market` class elements               |
-
----
-
-## Note
-
-**Account limitations.** A consistently profitable arb bettor will eventually be limited by sportsbooks. Once limited, meaning your maximum bet is reduced to something like $5, you can no longer place stakes large enough to make windows worthwhile. Getting limited is inevitable.
-
-**Bet sizing.** It's optimal to place bets in rounded amounts. Placing a bet for an exact calculated amount like $124.23 signals to a sportsbook's risk system that you are betting to a specific formula rather than recreationally. Books use stake precision as one of many signals to identify and flag sharp bettors. Rounding to the nearest dollar looks more natural. The tool rounds your stakes automatically.
