@@ -1,7 +1,3 @@
-"""
-gui.py — Minimal dark overlay. Black/white with green/yellow indicator only.
-"""
-
 import platform
 
 from PyQt5.QtWidgets import (
@@ -12,9 +8,6 @@ from PyQt5.QtCore import Qt, QPoint, QTimer, pyqtSlot
 from PyQt5.QtGui import QFont
 
 from worker import State
-
-
-# ─── Palette ──────────────────────────────────────────────────────────────────
 
 BG       = '#080808'
 SURFACE  = '#101010'
@@ -34,9 +27,6 @@ RED      = '#ff3b3b'
 GREEN_BG  = 'rgba(0,230,118,0.07)'
 GREEN_BDR = 'rgba(0,230,118,0.25)'
 
-
-# ─── Book metadata ─────────────────────────────────────────────────────────────
-
 _BOOK_META = {
     'pinnacle':   {'name': 'Pinnacle',   'abbr': 'PIN'},
     'betmgm':     {'name': 'BetMGM',     'abbr': 'MGM'},
@@ -52,9 +42,6 @@ def _book_name(b: str) -> str:
 
 def _book_abbr(b: str) -> str:
     return _BOOK_META.get(b.lower(), {}).get('abbr', b[:3].upper())
-
-
-# ─── Typography ───────────────────────────────────────────────────────────────
 
 _SYS   = 'Darwin' if platform.system() == 'Darwin' else 'other'
 _SANS  = 'SF Pro Display'  if _SYS == 'Darwin' else 'Helvetica Neue'
@@ -81,9 +68,6 @@ def hline(color=BORDER) -> QFrame:
     f.setFixedHeight(1)
     f.setStyleSheet(f'background: {color}; border: none;')
     return f
-
-
-# ─── Main window ──────────────────────────────────────────────────────────────
 
 class ArbOverlay(QMainWindow):
 
@@ -131,9 +115,8 @@ class ArbOverlay(QMainWindow):
         self._update_tmr.timeout.connect(self._tick_update)
         self._update_tmr.start(1000)
 
-        # Re-apply NSFloatingWindowLevel every second.
-        # macOS resets window levels when you switch apps; this restores it.
-        # setLevel_ does NOT steal focus or intercept clicks — safe to run frequently.
+        # Re-apply NSFloatingWindowLevel every second (temp fix)
+        # macOS resets window levels when you switch apps
         self._top_tmr = QTimer(self)
         self._top_tmr.timeout.connect(self._set_macos_level)
         self._top_tmr.start(1000)
@@ -163,8 +146,7 @@ class ArbOverlay(QMainWindow):
                 return
 
             # Prevent NSPanel from auto-hiding when our app loses focus.
-            # Qt.Tool creates an NSPanel whose hidesOnDeactivate is YES by default —
-            # that is exactly why the window vanishes the moment you click Chrome.
+            # Qt.Tool creates an NSPanel whose hidesOnDeactivate is YES by default
             lib.objc_msgSend.restype  = None
             lib.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_bool]
             lib.objc_msgSend(ns_window,
@@ -183,8 +165,6 @@ class ArbOverlay(QMainWindow):
         screen = QApplication.desktop().availableGeometry()
         self.move(screen.width() - self.width() - 20, 40)
 
-    # ── Build ─────────────────────────────────────────────────────────────────
-
     def _build(self):
         central = QWidget()
         central.setObjectName('central')
@@ -200,8 +180,6 @@ class ArbOverlay(QMainWindow):
         self._build_status()
         self._build_footer()
         self._show_waiting()
-
-    # ── Header ────────────────────────────────────────────────────────────────
 
     def _build_header(self):
         hdr = QWidget()
@@ -237,8 +215,6 @@ class ArbOverlay(QMainWindow):
         row.addWidget(btn)
 
         self._root.addWidget(hdr)
-
-    # ── Match ─────────────────────────────────────────────────────────────────
 
     def _build_match(self):
         self._match_w = QWidget()
@@ -282,8 +258,6 @@ class ArbOverlay(QMainWindow):
         self._root.addWidget(self._match_w)
         self._match_div = hline()
         self._root.addWidget(self._match_div)
-
-    # ── All-books overview grid ───────────────────────────────────────────────
 
     def _build_overview(self):
         self._ov_w = QWidget()
@@ -363,7 +337,6 @@ class ArbOverlay(QMainWindow):
         book_a    = data.get('book_a', '')
         book_b    = data.get('book_b', '')
 
-        # Column headers — last name of each player
         self._ov_p1_hdr.setText(_last(ea.get('p1_name', '')) or '—')
         self._ov_p2_hdr.setText(_last(ea.get('p2_name', '')) or '—')
 
@@ -410,8 +383,6 @@ class ArbOverlay(QMainWindow):
             row['p2_cell'].setStyleSheet(_cell_style(hl_p2))
             row['p1_lbl'].setStyleSheet(f'color: {_lbl_color(hl_p1)}; background: transparent;')
             row['p2_lbl'].setStyleSheet(f'color: {_lbl_color(hl_p2)}; background: transparent;')
-
-    # ── Arb alert ─────────────────────────────────────────────────────────────
 
     def _build_arb(self):
         self._arb_w = QWidget()
@@ -486,7 +457,6 @@ class ArbOverlay(QMainWindow):
         player = L('', 11, WHITE)
         player.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
-        # Odds and stake shown right-aligned with fixed widths so they line up
         price = L('', 12, GREEN, QFont.Bold, mono=True, align=Qt.AlignRight)
         price.setFixedWidth(60)
 
@@ -505,8 +475,6 @@ class ArbOverlay(QMainWindow):
 
         return {'layout': row, 'book': book_lbl, 'player': player,
                 'price': price, 'stake': stake}
-
-    # ── Status ────────────────────────────────────────────────────────────────
 
     def _build_status(self):
         self._status_w = QWidget()
@@ -564,8 +532,6 @@ class ArbOverlay(QMainWindow):
             row['status'].setText('waiting')
             row['status'].setStyleSheet(f'color: {GREY3}; font-size: 9px; background: transparent;')
 
-    # ── Footer ────────────────────────────────────────────────────────────────
-
     def _build_footer(self):
         ftr = QWidget()
         ftr.setFixedHeight(26)
@@ -592,8 +558,6 @@ class ArbOverlay(QMainWindow):
         row.addWidget(self._update_lbl)
 
         self._root.addWidget(ftr)
-
-    # ── State switching ───────────────────────────────────────────────────────
 
     def _hide_all(self):
         for w in (self._match_w, self._match_div,
@@ -665,8 +629,6 @@ class ArbOverlay(QMainWindow):
         self._update_overview(data)
         self._fill_arb(data)
 
-    # ── Data filling ──────────────────────────────────────────────────────────
-
     def _fill_match(self, data: dict):
         ea = data.get('entry_a', {})
         self._p1_lbl.setText(_shorten(ea.get('p1_name', '?')))
@@ -674,7 +636,7 @@ class ArbOverlay(QMainWindow):
 
     def _fill_arb(self, data: dict):
         arb    = data.get('arb', {})
-        stakes = arb.get('stakes') or {}   # kelly_stakes can return None
+        stakes = arb.get('stakes') or {} 
         book_a = data.get('book_a', '')
         book_b = data.get('book_b', '')
 
@@ -705,8 +667,6 @@ class ArbOverlay(QMainWindow):
         )
         self._profit_lbl.setText(f'${ret:.2f}')
 
-    # ── Timers ────────────────────────────────────────────────────────────────
-
     def _tick_pulse(self):
         self._pulse_phase = not self._pulse_phase
         color   = GREEN if self._current_state == State.ARB_FOUND else YELLOW
@@ -720,8 +680,6 @@ class ArbOverlay(QMainWindow):
         s = self._update_secs
         self._update_lbl.setText(f'{s}s ago')
 
-    # ── Drag ─────────────────────────────────────────────────────────────────
-
     def mousePressEvent(self, e):
         if e.button() == Qt.LeftButton:
             self._drag_pos = e.globalPos() - self.frameGeometry().topLeft()
@@ -733,11 +691,8 @@ class ArbOverlay(QMainWindow):
     def mouseReleaseEvent(self, _e):
         self._drag_pos = None
 
-
-# ─── Utilities ────────────────────────────────────────────────────────────────
-
 def _fmt(val, book_id: str = '') -> str:
-    """Convert internal decimal odds to American format for display."""
+    """Convert internal decimal odds to American format"""
     if val is None:
         return '—'
     try:

@@ -1,29 +1,31 @@
 /**
- * background.js — Extension service worker.
+ * background.js: Extension service worker.
  *
  * Owns Pinnacle tab detection and live odds monitoring:
- *   - Scans for existing Pinnacle match tabs on startup
- *   - Injects a self-contained price monitor into each tab's MAIN world
- *     via chrome.scripting.executeScript (bypasses content-script timing issues)
- *   - The injected monitor uses MutationObserver on buttons → fires the instant
- *     React patches any price element after a WebSocket update
- *   - 2-second heartbeat re-sends last known odds to Python so Python attaches
- *     within ≤2s regardless of when it was started
+ * 
+ * Scans for existing Pinnacle match tabs on startup
+ *   
+ * Injects a self-contained price monitor into each tab's MAIN world
+ * via chrome.scripting.executeScript (bypasses content-script timing issues)
+ *
+ * The injected monitor uses MutationObserver on buttons, fires the instant
+ * React patches any price element after a WebSocket update
+ * 
+ * 2-second heartbeat re-sends last known odds to Python so Python attaches
+ * within ≤2s regardless of when it was started
  *
  * BetMGM relay is unchanged: relay.js content script ports messages here.
  */
 
 const SERVER = 'http://localhost:8765';
 
-var _lastPinnacleOdds   = null;   // cached for heartbeat
+var _lastPinnacleOdds   = null; 
 var _lastBetMGMOdds     = null;
 var _lastThescoreOdds   = null;
 var _lastDraftkingsOdds = null;
 var _lastBetwayOdds     = null;
 var _lastFanduelOdds    = null;
 var _lastBet365Odds     = null;
-
-// ── POST to Python ────────────────────────────────────────────────────────────
 
 function postToPython(msg) {
     fetch(SERVER, {
@@ -33,7 +35,7 @@ function postToPython(msg) {
     }).catch(function () {});
 }
 
-// ── Heartbeat ─────────────────────────────────────────────────────────────────
+// Heartbeat
 // Sends last-known odds every 2 s so Python always attaches within 2 s of start.
 
 setInterval(function () {
@@ -46,7 +48,7 @@ setInterval(function () {
     if (_lastBet365Odds)     postToPython(_lastBet365Odds);
 }, 2000);
 
-// ── Tab detection ─────────────────────────────────────────────────────────────
+// Tab detection
 
 function isPinnacleMatch(url) {
     return url && url.includes('pinnacle.ca') && /\/\d{7,12}\//.test(url);
@@ -65,7 +67,6 @@ function isDraftkingsEvent(url) {
 }
 
 function isBet365Event(url) {
-    // bet365.ca is a hash-SPA — any page load is the shell; the monitor checks the hash
     return url && url.includes('bet365.ca');
 }
 
@@ -154,7 +155,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
     }
 });
 
-// ── Relay from content scripts ────────────────────────────────────────────────
+// Relay from content scripts
 
 chrome.runtime.onConnect.addListener(function (port) {
     port.onMessage.addListener(function (msg) {
@@ -174,11 +175,7 @@ chrome.runtime.onConnect.addListener(function (port) {
     });
 });
 
-// ── Injected Pinnacle monitor (runs in page MAIN world) ───────────────────────
-//
-// IMPORTANT: this function is serialised with .toString() and injected into
-// the page. It must be entirely self-contained — no references to variables
-// or functions outside its own body.
+// Injected Pinnacle monitor (runs in page MAIN world)
 
 function pinnacleMonitor() {
     // Guard: only inject once per page lifetime (SPA navigations keep window)
@@ -188,7 +185,7 @@ function pinnacleMonitor() {
     var _lastKey = '';
     var _debounce = null;
 
-    // ── Price reader ──────────────────────────────────────────────────────────
+    // Price reader
     //
     // Strategy: read innerText on <button> elements — handles nested spans like
     //   <button><span>1</span><span class="dec">.869</span></button>
@@ -223,13 +220,13 @@ function pinnacleMonitor() {
         return prices.length >= 2 ? [prices[0], prices[1]] : null;
     }
 
-    // ── Name reader ───────────────────────────────────────────────────────────
+    // Name reader
     // Extract player/team names so Python never needs to wait for the REST
     // matchup endpoint.  Sources tried in order: document.title, h1/h2.
 
     function readNames() {
         // Pinnacle page titles: "PlayerA vs PlayerB | Pinnacle" or
-        //                       "PlayerA - PlayerB | Tennis | Pinnacle"
+        // "PlayerA - PlayerB | Tennis | Pinnacle"
         var sources = [document.title];
         var headings = document.querySelectorAll('h1, h2');
         for (var h = 0; h < headings.length; h++) {
@@ -248,8 +245,6 @@ function pinnacleMonitor() {
         }
         return null;
     }
-
-    // ── Relay ─────────────────────────────────────────────────────────────────
 
     function maybeRelay() {
         var prices = readPrices();
@@ -275,7 +270,7 @@ function pinnacleMonitor() {
         }, '*');
     }
 
-    // ── MutationObserver ──────────────────────────────────────────────────────
+    // MutationObserver
     // Fires the instant React patches any DOM node (e.g. after a WebSocket
     // price update), giving us the same latency as the page UI.
 
@@ -284,9 +279,7 @@ function pinnacleMonitor() {
         _debounce = setTimeout(maybeRelay, 100);
     }).observe(document.body, { subtree: true, childList: true });
 
-    // ── Periodic forced relay ─────────────────────────────────────────────────
-    // Resets dedup every 3 s so the background heartbeat always has fresh data
-    // to send to Python, even when no odds have changed.
+    // Periodic forced relay
 
     setInterval(function () {
         _lastKey = '';
@@ -299,7 +292,7 @@ function pinnacleMonitor() {
     console.log('[Arb Scanner] pinnacleMonitor active');
 }
 
-// ── Injected BetMGM monitor (runs in page MAIN world) ────────────────────────
+// Injected BetMGM monitor (runs in page MAIN world)
 // Same self-contained constraint as pinnacleMonitor above.
 
 function betmgmMonitor() {
@@ -308,10 +301,6 @@ function betmgmMonitor() {
 
     var _lastKey = '';
     var _debounce = null;
-
-    // ── Name reader ───────────────────────────────────────────────────────────
-    // BetMGM titles: "PlayerA vs PlayerB | Sport | BetMGM"
-    //            or "PlayerA - PlayerB | ..."
 
     function readNames() {
         var sources = [document.title];
@@ -327,10 +316,6 @@ function betmgmMonitor() {
         }
         return null;
     }
-
-    // ── Match winner odds reader ──────────────────────────────────────────────
-    // Finds the "Match winner" section and returns the first two prices.
-    // Handles both decimal (1.85) and American (-150, +105) formats.
 
     function toDecimal(txt) {
         txt = (txt || '').trim().replace(/[−–—]/g, '-');
@@ -348,7 +333,7 @@ function betmgmMonitor() {
 
     function _extractPrices(root) {
         var prices = [];
-        // Try buttons first — BetMGM renders each outcome as a clickable button.
+        // Try buttons first, BetMGM renders each outcome as a clickable button.
         // button.innerText concatenates nested spans so "-150" is one string.
         var btns = root.querySelectorAll('button');
         for (var i = 0; i < btns.length && prices.length < 4; i++) {
@@ -372,7 +357,7 @@ function betmgmMonitor() {
 
     function readMatchWinnerOdds() {
         // Find "Match winner" label then walk up to a container with exactly
-        // 2–4 prices. NO body-wide fallback — avoids grabbing wrong markets.
+        // 2–4 prices. NO body-wide fallback, avoids grabbing wrong markets.
         var all = document.querySelectorAll('*');
         for (var i = 0; i < all.length; i++) {
             if (all[i].children.length > 0) continue;
@@ -388,8 +373,6 @@ function betmgmMonitor() {
         }
         return null;
     }
-
-    // ── Relay ─────────────────────────────────────────────────────────────────
 
     function maybeRelay() {
         var odds = readMatchWinnerOdds();
@@ -428,7 +411,7 @@ function betmgmMonitor() {
     console.log('[Arb Scanner] betmgmMonitor active');
 }
 
-// ── Injected theScore monitor (runs in page MAIN world) ───────────────────────
+// Injected theScore monitor (runs in page MAIN world)
 
 function thescoreMonitor() {
     if (window.__arbThescoreMonitor) return;
@@ -437,7 +420,7 @@ function thescoreMonitor() {
     var _lastKey  = '';
     var _debounce = null;
 
-    // ── Helpers shared by both new monitors ───────────────────────────────────
+    // Helpers shared by both new monitors
 
     function toDecimal(txt) {
         txt = (txt || '').trim();
@@ -518,7 +501,7 @@ function thescoreMonitor() {
                 section = section.parentElement;
             }
         }
-        // Fallback: scan all buttons on page (names may be empty if buttons only show odds)
+        // Fallback, scan all buttons on page (names may be empty if buttons only show odds)
         var allBtns = document.querySelectorAll('button');
         var fb = [];
         for (var b = 0; b < allBtns.length && fb.length < 4; b++) {
@@ -569,7 +552,7 @@ function thescoreMonitor() {
     console.log('[Arb Scanner] thescoreMonitor active');
 }
 
-// ── Injected DraftKings monitor (runs in page MAIN world) ─────────────────────
+// Injected DraftKings monitor (runs in page MAIN world)
 
 function draftkingsMonitor() {
     if (window.__arbDraftkingsMonitor) return;
@@ -605,7 +588,7 @@ function draftkingsMonitor() {
         return prices;
     }
 
-    // 'winner' omitted — too broad, matches "Game Winner" / "Set Winner"
+    // 'winner' omitted, too broad, matches "Game Winner" / "Set Winner"
     var MARKET_LABELS_DK = ['moneyline', 'match winner', 'match result', 'to win match'];
 
     // Parse a single outcome button: returns {name, price} or null.
@@ -628,8 +611,8 @@ function draftkingsMonitor() {
     function readMarket() {
         var all = document.querySelectorAll('*');
         for (var i = 0; i < all.length; i++) {
-            // Don't skip elements with children — DraftKings wraps market headers:
-            //   <h3>Moneyline<span class="icon">↑</span></h3>
+            // Don't skip elements with children, DraftKings wraps market headers:
+            // <h3>Moneyline<span class="icon">↑</span></h3>
             var label = (all[i].innerText || '').toLowerCase().trim();
             var hit = false;
             for (var li = 0; li < MARKET_LABELS_DK.length; li++) {
@@ -647,7 +630,7 @@ function draftkingsMonitor() {
                     var o = parseOutcomeButton(btns[b]);
                     if (o !== null) outcomes.push(o);
                 }
-                // Require exactly 2-4 outcomes — guards against grabbing a full multi-market container
+                // Require exactly 2-4 outcomes, guards against grabbing a full multi-market container
                 if (outcomes.length >= 2 && outcomes.length <= 4) {
                     return {
                         p1_name: outcomes[0].name, p1_odds: outcomes[0].price,
@@ -657,7 +640,7 @@ function draftkingsMonitor() {
                 section = section.parentElement;
             }
         }
-        // Fallback: scan all buttons (names may be empty if buttons only show odds)
+        // Fallback, scan all buttons (names may be empty if buttons only show odds)
         var allBtns = document.querySelectorAll('button');
         var fb = [];
         for (var b = 0; b < allBtns.length && fb.length < 4; b++) {
@@ -708,7 +691,7 @@ function draftkingsMonitor() {
     console.log('[Arb Scanner] draftkingsMonitor active');
 }
 
-// ── Injected Betway monitor (runs in page MAIN world) ─────────────────────────
+// Injected Betway monitor (runs in page MAIN world)
 
 function betwayMonitor() {
     if (window.__arbBetwayMonitor) return;
@@ -851,7 +834,7 @@ function betwayMonitor() {
     console.log('[Arb Scanner] betwayMonitor active');
 }
 
-// ── Injected FanDuel monitor (runs in page MAIN world) ────────────────────────
+// Injected FanDuel monitor (runs in page MAIN world)
 
 function fanduelMonitor() {
     if (window.__arbFanduelMonitor) return;
@@ -901,7 +884,7 @@ function fanduelMonitor() {
     }
 
     // FanDuel renders outcome cells as <div aria-label="Player Name to win, +280 Odds">
-    // — there is no usable innerText on betting buttons. Parse the aria-label directly.
+    // There is no usable innerText on betting buttons. Parse the aria-label directly.
     function readMarket() {
         // Pattern: "{name} to win, {american_odds} Odds"
         var pattern = /^(.+?)\s+to\s+win,\s*([+\-]\d{2,5})\s+odds?$/i;
@@ -960,19 +943,20 @@ function fanduelMonitor() {
     console.log('[Arb Scanner] fanduelMonitor active');
 }
 
-// ── Injected bet365 monitor (runs in page MAIN world) ─────────────────────────
+// Injected bet365 monitor (runs in page MAIN world)
 //
 // bet365 DOM structure (match winner market):
-//   div.gl-Market  (parent row — innerText = "Player Name\n+110\n+110")
-//     div.gl-Market (leaf name cell  — innerText = "Player Name")
-//     div.gl-Market (leaf odds cell  — innerText = "+110")
-//     div.gl-Market (leaf odds cell  — innerText = "+110")
+//
+// div.gl-Market  (parent row — innerText = "Player Name\n+110\n+110")
+// div.gl-Market (leaf name cell  — innerText = "Player Name")
+// div.gl-Market (leaf odds cell  — innerText = "+110")
+// div.gl-Market (leaf odds cell  — innerText = "+110")
 //
 // Strategy: scan all [class*="gl-Market"] elements; the first two whose
 // first line is a player name (not a market keyword / odds string) and
 // whose subsequent lines contain a valid price are the match winner outcomes.
 //
-// bet365 is a hash-SPA — navigation between events changes window.location.hash
+// bet365 is a hash-SPA, navigation between events changes window.location.hash
 // without a page reload, so we also listen to 'hashchange'.
 
 function bet365Monitor() {
@@ -1014,7 +998,7 @@ function bet365Monitor() {
             if (SKIP_PREFIX.test(name)) continue;        // known market label keyword
             if (name.length > 50) continue;              // no real player name is this long
             if (toDecimal(name) !== null) continue;      // first line is an odds value
-            if (name.indexOf(' - ') >= 0) continue;      // "Point Betting - Set 1 Game 3" style labels
+            if (name.indexOf(' - ') >= 0) continue;      // "Point Betting, Set 1 Game 3" style labels
             if (/\([^)]+\)/.test(name)) continue;        // "(Svr)", "(ARG)" serve/team markers
 
             // Take the first valid price on any subsequent line

@@ -1,8 +1,7 @@
 """
-pinnacle.py — Pinnacle API client.
+pinnacle.py: Pinnacle API client.
 
 Pinnacle serves odds via a REST API at api.arcadia.pinnacle.com.
-Cache-Control is max-age=5, so prices update every 5 seconds.
 
 Endpoints used:
   GET /0.1/matchups/{matchupId}
@@ -107,8 +106,6 @@ def get_moneyline(matchup_id: str) -> dict | None:
     """
     Fetch current moneyline odds from Pinnacle for a matchupId.
 
-    We prefer period=0 (full match) over period=1 (current set).
-
     Returns:
     {
         'source':         'pinnacle',
@@ -138,10 +135,8 @@ def get_moneyline(matchup_id: str) -> dict | None:
     if not isinstance(markets, list):
         return None
 
-    # Priority: period 0 full match moneyline, not alternate, status open
     moneyline = _find_moneyline(markets, period=0)
     if not moneyline:
-        # Fall back to period 1 (current set) for in-play
         moneyline = _find_moneyline(markets, period=1)
     if not moneyline:
         return None

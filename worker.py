@@ -1,5 +1,5 @@
 """
-worker.py — Background monitoring thread.
+worker.py: Background monitoring thread.
 
 Runs an aiohttp HTTP server on localhost:8765 that receives data POSTed
 by the Chrome extension, then evaluates arb and emits Qt signals to the GUI.
@@ -7,8 +7,6 @@ by the Chrome extension, then evaluates arb and emits Qt signals to the GUI.
 All books are treated equally. Any two selected books with data for the same
 match are compared for arb. Pinnacle is not mandatory.
 
-Unified book entry format:
-  {'match_id': str, 'p1_name': str, 'p1_odds': float, 'p2_name': str, 'p2_odds': float}
 """
 
 import asyncio
@@ -23,16 +21,13 @@ from pinnacle import extract_matchup_id, parse_matchup_details, parse_straight_r
 from arb import find_best_arb
 
 
-# ── Name matching helpers ─────────────────────────────────────────────────────
+# Name matching helpers
 
 def _names_match(name_a: str, name_b: str) -> bool:
     if not name_a or not name_b:
         return False
-    # Fast path: last-name match (handles "J. Prado" vs "Christopher Wong")
     if _extract_last(name_a) == _extract_last(name_b):
         return True
-    # Compound-surname fallback: any 4+ char word in common.
-    # Handles "Juan Carlos Prado Angelo" vs "J. Prado" → both have "prado".
     def _sig_words(n: str) -> set:
         n = re.sub(r'\s*\([^)]*\)', '', n.strip().lower())
         return {w.rstrip('.') for w in n.split() if len(w.rstrip('.')) >= 4}
@@ -41,11 +36,11 @@ def _names_match(name_a: str, name_b: str) -> bool:
 
 def _extract_last(name: str) -> str:
     name = name.strip().lower()
-    name = re.sub(r'\s*\([^)]*\)', '', name).strip()   # strip (CHN), (Games), etc.
+    name = re.sub(r'\s*\([^)]*\)', '', name).strip()  
     if ',' in name:
-        name = name[:name.index(',')].strip()           # strip event description
+        name = name[:name.index(',')].strip()           
     if '/' in name:
-        name = name.split('/')[-1].strip()              # doubles: last player
+        name = name.split('/')[-1].strip()        
     parts = name.replace('.', '').split()
     substantive = [p for p in parts if len(p) > 1]
     return substantive[-1] if substantive else (parts[-1] if parts else '')
@@ -101,7 +96,7 @@ class WorkerThread(QThread):
         self._last_state:       str | None   = None
         self._last_logged_odds: tuple | None = None
 
-    # ── Thread entry point ────────────────────────────────────────────────────
+    # Thread entry point
 
     def run(self):
         self._running = True
@@ -118,8 +113,6 @@ class WorkerThread(QThread):
         self._running = False
         if self._loop and self._loop.is_running():
             self._loop.call_soon_threadsafe(self._loop.stop)
-
-    # ── Main async loop ───────────────────────────────────────────────────────
 
     async def _main(self):
         app = web.Application()
@@ -147,7 +140,7 @@ class WorkerThread(QThread):
         finally:
             await self._runner.cleanup()
 
-    # ── HTTP handlers ─────────────────────────────────────────────────────────
+    # HTTP handlers
 
     async def _handle_options(self, _request: web.Request) -> web.Response:
         return web.Response(headers={
@@ -261,8 +254,6 @@ class WorkerThread(QThread):
 
         return _ok()
 
-    # ── Helpers ───────────────────────────────────────────────────────────────
-
     async def _handle_dom_odds(self, data: dict, book: str, id_key: str):
         try:
             parsed  = json.loads(data.get('body', '{}'))
@@ -300,7 +291,7 @@ class WorkerThread(QThread):
         )
         self._book_caches['pinnacle'][mid] = entry
 
-    # ── Arb evaluation ────────────────────────────────────────────────────────
+    # Arb evaluation
 
     async def _evaluate(self):
         """Compare all pairs of selected books. Emit the best arb found."""
@@ -421,7 +412,7 @@ class WorkerThread(QThread):
                                   'p2_name': eb['p1_name'], 'p2_odds': eb['p1_odds']}
                     return ea, eb_aligned
 
-        # Fallback: names unavailable — pair most-recent entries as-is.
+        # Fallback: names unavailable, pair most-recent entries as-is.
         # No mathematical alignment: caller receives raw entries and is responsible
         # for knowing the user has both books open on the same match.
         return cache_a[-1], cache_b[-1]

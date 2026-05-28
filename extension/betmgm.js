@@ -1,5 +1,5 @@
 /**
- * betmgm.js — MAIN world content script.
+ * betmgm.js: MAIN world content script.
  * Intercepts BetMGM's SignalR WebSocket AND initial REST API calls.
  *
  * WebSocket (cds-push): live updates, uses \x1e SignalR frame delimiter.
@@ -10,7 +10,7 @@
 
     console.log('[Arb Scanner] betmgm.js loaded on', window.location.href);
 
-    // ── Shared game processor ─────────────────────────────────────────────────
+    // Shared game processor
 
     function processGame(fixtureId, game) {
         if (!game || game.isMain !== true) return;
@@ -48,7 +48,6 @@
                     processGame(obj.fixtureId, obj.games[j]);
                 }
             }
-            // Don't recurse further into this object — fixtureId is a terminal node
             return;
         }
         var keys = Object.keys(obj);
@@ -57,7 +56,7 @@
         }
     }
 
-    // ── WebSocket intercept (live updates) ────────────────────────────────────
+    // WebSocket intercept (live updates)
 
     var _Orig = window.WebSocket;
 
@@ -94,7 +93,7 @@
     window.WebSocket.CLOSED     = _Orig.CLOSED;
     window.WebSocket.prototype  = _Orig.prototype;
 
-    // ── Fetch intercept (initial page odds) ───────────────────────────────────
+    // Fetch intercept (initial page odds)
 
     var _origFetch = window.fetch;
 
@@ -115,7 +114,7 @@
         return p;
     };
 
-    // ── XHR intercept (fallback) ──────────────────────────────────────────────
+    // XHR intercept (fallback)
 
     var _origOpen = XMLHttpRequest.prototype.open;
     var _origSend = XMLHttpRequest.prototype.send;

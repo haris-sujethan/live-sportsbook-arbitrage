@@ -1,13 +1,10 @@
 """
-arb.py — Arbitrage calculation utilities.
+arb.py: Arbitrage calculation utilities.
 
-Handles odds conversion, margin calculation, and Kelly stake sizing.
-All prices are in decimal odds internally.
 """
 
 
 def american_to_decimal(american: int) -> float:
-    """Convert American odds to decimal odds."""
     if american > 0:
         return round((american / 100) + 1, 6)
     else:
@@ -15,7 +12,6 @@ def american_to_decimal(american: int) -> float:
 
 
 def decimal_to_american(decimal: float) -> int:
-    """Convert decimal odds to American odds."""
     if decimal >= 2.0:
         return int((decimal - 1) * 100)
     else:
@@ -23,7 +19,6 @@ def decimal_to_american(decimal: float) -> int:
 
 
 def implied(decimal: float) -> float:
-    """Convert decimal odds to implied probability."""
     if decimal <= 1.0:
         return 1.0
     return 1.0 / decimal
@@ -37,7 +32,7 @@ def arb_margin(price_a: float, price_b: float) -> float:
     price_b = opposite side on book B (decimal)
 
     Returns:
-        positive float  = guaranteed profit margin exists
+        positive float  = profit margin exists
         negative float  = no arb, margin is how far from breakeven
     """
     return 1.0 - (implied(price_a) + implied(price_b))
@@ -52,8 +47,7 @@ def kelly_stakes(price_a: float, price_b: float, total: float = 100.0) -> dict:
     total    = total amount to stake across both sides
 
     Stakes are rounded to whole dollars to avoid cent-precision bets
-    that are more likely to trigger limits. Guaranteed profit and return
-    are recalculated from the rounded values.
+    that are more likely to trigger limits. 
 
     Returns dict with stake_a, stake_b, profit, return, margin_pct.
     Returns None if no arb exists.
@@ -66,17 +60,13 @@ def kelly_stakes(price_a: float, price_b: float, total: float = 100.0) -> dict:
     if margin <= 0:
         return None
 
-    # Stake on A ∝ A's own implied probability (favourite gets the bigger stake).
-    # Round to whole dollars — avoid cent-precision bets.
     stake_a = int(round(total * (imp_a / total_imp)))
     stake_b = int(round(total * (imp_b / total_imp)))
 
     actual_total = stake_a + stake_b
 
-    # With rounding, each side may return slightly different amounts.
-    # Guaranteed return is the minimum (worst case), profit vs actual total staked.
-    payout_a = stake_a * price_a  # return if side A wins
-    payout_b = stake_b * price_b  # return if side B wins
+    payout_a = stake_a * price_a
+    payout_b = stake_b * price_b 
     guaranteed_return = min(payout_a, payout_b)
     profit = guaranteed_return - actual_total
 
@@ -97,14 +87,7 @@ def find_best_arb(
     soft_away: float,
     total_stake: float = 100.0,
 ) -> dict | None:
-    """
-    Check both arb directions between Pinnacle and a soft book.
-
-    Direction A: bet HOME on Pinnacle, bet AWAY on soft book
-    Direction B: bet AWAY on Pinnacle, bet HOME on soft book
-
-    Returns the best arb opportunity dict, or None if no arb exists.
-    """
+    
     if not all([pinnacle_home, pinnacle_away, soft_home, soft_away]):
         return None
     if any(v <= 1.0 for v in [pinnacle_home, pinnacle_away, soft_home, soft_away]):

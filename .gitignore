@@ -13,6 +13,7 @@ env/
 
 # macOS
 .DS_Store
+**/.DS_Store
 .AppleDouble
 .LSOverride
 
@@ -22,11 +23,8 @@ env/
 *.swp
 *.swo
 
-# Logs / temp
+
 *.log
-
-# Environment variables
 .env
-
-# Claude Code
+research/.env
 .claude/

@@ -1,5 +1,5 @@
 /**
- * pinnacle_relay.js — ISOLATED world bridge for Pinnacle tab.
+ * pinnacle_relay.jsISOLATED world bridge for Pinnacle tab.
  *
  * Relays window.postMessage events from pinnacle.js (and the injected
  * pinnacleMonitor) through a long-lived port to background.js.

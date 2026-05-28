@@ -1,8 +1,7 @@
 """
-setup.py — Launch configuration dialog.
+setup.py: Launch configuration dialog.
 
 User picks which books to monitor (any two or more) and sets total bet size.
-No book is mandatory. Any pair with odds on the same match will be compared.
 """
 
 import platform
@@ -13,9 +12,6 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QFont, QIntValidator
-
-
-# ─── Palette ──────────────────────────────────────────────────────────────────
 
 BG      = '#080808'
 RAISED  = '#161616'
@@ -31,9 +27,6 @@ GREY3   = '#333333'
 GREEN   = '#00e676'
 RED     = '#ff3b3b'
 
-
-# ─── Typography ───────────────────────────────────────────────────────────────
-
 _SYS  = 'Darwin' if platform.system() == 'Darwin' else 'other'
 _SANS = 'SF Pro Display' if _SYS == 'Darwin' else 'Helvetica Neue'
 _MONO = 'SF Mono'        if _SYS == 'Darwin' else 'Menlo'
@@ -45,9 +38,6 @@ def _font(size=11, weight=QFont.Normal, mono=False) -> QFont:
     f.setWeight(weight)
     return f
 
-
-# ─── Book definitions ─────────────────────────────────────────────────────────
-
 BOOKS = [
     {'id': 'pinnacle',   'label': 'Pinnacle',   'abbr': 'PIN', 'default': True},
     {'id': 'betmgm',     'label': 'BetMGM',     'abbr': 'MGM', 'default': True},
@@ -58,14 +48,7 @@ BOOKS = [
     {'id': 'bet365',     'label': 'bet365',     'abbr': '365', 'default': False},
 ]
 
-
-# ─── Book card ────────────────────────────────────────────────────────────────
-
 class BookCard(QPushButton):
-    """
-    Unselected: dark card, grey abbreviation.
-    Selected:   cream/white card, black text.
-    """
 
     def __init__(self, book: dict):
         super().__init__()
@@ -138,9 +121,6 @@ class BookCard(QPushButton):
     @property
     def selected(self) -> bool:
         return self._selected
-
-
-# ─── Setup dialog ─────────────────────────────────────────────────────────────
 
 class SetupDialog(QDialog):
 

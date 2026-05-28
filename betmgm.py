@@ -1,5 +1,5 @@
 """
-betmgm.py — BetMGM odds extraction via JavaScript injection.
+betmgm.py: BetMGM odds extraction via JavaScript injection.
 
 Instead of hooking the CDP Network domain (which causes severe page lag),
 we inject a lightweight JavaScript snippet into the BetMGM tab before the

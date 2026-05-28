@@ -1,5 +1,5 @@
 """
-main.py — Entry point for the Arb Overlay.
+main.py: Entry point for the Arb Overlay.
 
 Shows a setup dialog on launch (book selection + bet size),
 then starts the PyQt5 overlay and background worker thread.
@@ -18,7 +18,6 @@ def main():
     app.setApplicationName('Arb Scanner')
     app.setQuitOnLastWindowClosed(True)
 
-    # ── Setup dialog ──────────────────────────────────────────────────────────
     dialog = SetupDialog()
     screen = QApplication.desktop().availableGeometry()
     dialog.adjustSize()
@@ -32,7 +31,6 @@ def main():
 
     config = dialog.result_config   # {'books': [...], 'total_stake': float}
 
-    # ── Overlay + worker ──────────────────────────────────────────────────────
     overlay = ArbOverlay(config)
     overlay.show()
 

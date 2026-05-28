@@ -149,7 +149,7 @@ WTA Indian Wells, USA            27.438            116 fixtures
 
 **Pre-game vs in-game**
 
-<img src="charts/kde_overlay.png">
+<img src="research/charts/kde_overlay.png">
 
 In-game Pinnacle movement is 3.8x larger per change than pre-game movement. The biggest arb windows are live, not before the match starts. This finding defined the live tool's purpose: it needs to work during matches, not just as a pre-game scanner.
 
@@ -215,7 +215,7 @@ FanDuel        16,240    9.61%      2.137%          11.9s
 bet365          6,974   68.48%      5.691%         609.2s
 ```
 
-<img src="charts/books_scatter.png">
+<img src="research/charts/books_scatter.png">
 
 **bet365's numbers are misleading.** 68% frequency and nearly 6% average margin sounds like the best pair by a wide margin. But look at the 609-second average window. That is ten minutes. bet365's 14,030 rows vs DraftKings' 835,144 rows tells the real story: bet365 barely participates in live tennis pricing. Their lines are effectively static during a match. The "arb" is just a permanently stale number sitting there (betting locked).
 
