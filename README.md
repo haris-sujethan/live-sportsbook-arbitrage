@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Sportsbook lines and prices constantly change based on market behaviour. Unlike traditional finance, most sportsbooks set their prices independently, so discrepancies between books are bound to exist.
+Sportsbook lines and prices constantly change based on market behaviour. Most sportsbooks set their prices independently, so discrepancies between books are bound to exist.
 
 Before games start, prices between books are similar since the market has enough time to settle around an expected value. However, during live (mid-match) betting, every sportsbook has to independently reprice its odds in real time. Some books react quickly to new information, while others are slower to adjust. These gaps create opportunities for arbitrage.
 
